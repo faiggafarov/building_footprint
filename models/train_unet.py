@@ -57,7 +57,7 @@ def train():
     log_file = "logs/unet_metrics.csv"
     with open(log_file, mode="w", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["Epoch", "Train Loss", "Val Dice", "Val IoU"])  # full metrics header
+        writer.writerow(["Epoch", "Train Loss", "Val Loss", "Val Dice", "Val IoU"])  # full metrics header
 
         best_val_dice = 0.0
         patience = 7
@@ -87,6 +87,7 @@ def train():
             model.eval()
             dice_scores = []
             iou_scores = []
+            val_loss_total = 0
 
             with torch.no_grad():
                 for imgs, masks in val_loader:
@@ -94,6 +95,9 @@ def train():
                     masks = masks.to(device).unsqueeze(1)
 
                     preds = model(imgs)
+                    loss = criterion(preds, masks)
+                    val_loss_total += loss.item()
+                    
                     dice = compute_dice(preds, masks).item()
                     iou = compute_iou(preds, masks).item()
                     dice_scores.append(dice)
@@ -101,9 +105,10 @@ def train():
 
             val_dice = sum(dice_scores) / len(dice_scores) if dice_scores else 0
             val_iou = sum(iou_scores) / len(iou_scores) if iou_scores else 0
+            val_loss_avg = val_loss_total / len(val_loader) if len(val_loader) > 0 else 0
 
-            print(f"Epoch {epoch+1}: Train Loss = {avg_loss:.4f} | Val Dice = {val_dice:.4f} | Val IoU = {val_iou:.4f}", flush=True)
-            writer.writerow([epoch + 1, avg_loss, val_dice, val_iou])
+            print(f"Epoch {epoch+1}: Train Loss = {avg_loss:.4f} | Val Loss = {val_loss_avg:.4f} | Val Dice = {val_dice:.4f} | Val IoU = {val_iou:.4f}", flush=True)
+            writer.writerow([epoch + 1, avg_loss, val_loss_avg, val_dice, val_iou])
             file.flush()
             
             if val_dice > best_val_dice:
