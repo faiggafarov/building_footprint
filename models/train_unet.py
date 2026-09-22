@@ -28,7 +28,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}", flush=True)
 
 # ---------- Hyperparameters ----------
-EPOCHS = 10
+EPOCHS = 50
 BATCH_SIZE = 16
 LR = 1e-4
 
@@ -60,7 +60,7 @@ def train():
         writer.writerow(["Epoch", "Train Loss", "Val Dice", "Val IoU"])  # full metrics header
 
         best_val_dice = 0.0
-        patience = 3
+        patience = 7
         epochs_no_improve = 0
 
         for epoch in range(EPOCHS):
